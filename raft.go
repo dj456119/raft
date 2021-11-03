@@ -1092,6 +1092,7 @@ func (r *Raft) dispatchLogs(applyLogs []*logFuture) {
 	logs := make([]*Log, n)
 	metrics.SetGauge([]string{"raft", "leader", "dispatchNumLogs"}, float32(n))
 
+	// var batchSize int
 	for idx, applyLog := range applyLogs {
 		applyLog.dispatch = now
 		lastIndex++
@@ -1100,7 +1101,10 @@ func (r *Raft) dispatchLogs(applyLogs []*logFuture) {
 		applyLog.log.AppendedAt = now
 		logs[idx] = &applyLog.log
 		r.leaderState.inflight.PushBack(applyLog)
+		// batchSize += len(applyLog.log.Data)
 	}
+
+	// metrics.AddSample([]string{"raft", "leader", "dispatchLogBatchBytes"}, float32(batchSize))
 
 	// Write the log entry locally
 	if err := r.logs.StoreLogs(logs); err != nil {
